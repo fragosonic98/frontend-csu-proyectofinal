@@ -1,0 +1,102 @@
+/* ============================================================
+   CIDIUM CAMPUS - Estilos Globales
+   Este archivo es el "lienzo" base de toda la app.
+   Tailwind carga sus utilerías aquí con estas 3 directivas:
+   ============================================================ */
+@tailwind base;       /* Resets: normaliza cómo se ven los elementos HTML */
+@tailwind components; /* Componentes: clases reutilizables que definamos */
+@tailwind utilities;  /* Utilerías: las clases de Tailwind como p-4, flex, etc. */
+
+/* Variables CSS globales — colores de Cidium */
+:root {
+  --c-black:  #0a0a0a;
+  --c-dark:   #111111;
+  --c-gray:   #1e1e1e;
+  --c-border: #2a2a2a;
+  --c-muted:  #6b7280;
+  --c-white:  #f9f9f7;
+  --c-cream:  #e8e0d0;
+  --c-blue:   #2563eb;
+  --c-blue-h: #1d4ed8;
+  --c-green:  #059669;
+  --c-red:    #dc2626;
+  --c-amber:  #d97706;
+}
+
+/* Reset base */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--c-black);
+  color: var(--c-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--c-dark); }
+::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--c-muted); }
+
+/* Selección de texto con color de marca */
+::selection { background: rgba(37, 99, 235, 0.3); color: var(--c-white); }
+
+/* ============================================================
+   COMPONENTES REUTILIZABLES (@layer components)
+   Aquí defines clases propias que puedes usar como si fueran
+   clases de Tailwind: className="btn-primary"
+   ============================================================ */
+@layer components {
+  /* Botón principal */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium
+           rounded-lg transition-all duration-200 cursor-pointer
+           bg-blue-600 text-white hover:bg-blue-700 active:scale-95
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Botón secundario/outline */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium
+           rounded-lg transition-all duration-200 cursor-pointer
+           border border-[var(--c-border)] text-[var(--c-white)] bg-transparent
+           hover:bg-[var(--c-gray)] active:scale-95
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Tarjeta base */
+  .card {
+    @apply rounded-xl border border-[var(--c-border)] bg-[var(--c-dark)] p-6;
+  }
+
+  /* Campo de formulario */
+  .input-field {
+    @apply w-full px-4 py-2.5 rounded-lg text-sm
+           bg-[var(--c-gray)] border border-[var(--c-border)]
+           text-[var(--c-white)] placeholder-[var(--c-muted)]
+           focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500
+           transition-colors duration-200;
+  }
+
+  /* Label de formulario */
+  .form-label {
+    @apply block text-sm font-medium text-gray-300 mb-1.5;
+  }
+
+  /* Badge de estado */
+  .badge-active {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-green-900/50 text-green-400 border border-green-800/50;
+  }
+  .badge-inactive {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-red-900/50 text-red-400 border border-red-800/50;
+  }
+  .badge-pending {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-amber-900/50 text-amber-400 border border-amber-800/50;
+  }
+}
