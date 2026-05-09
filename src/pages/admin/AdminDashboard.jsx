@@ -1,50 +1,11 @@
-/* AdminDashboard.jsx — Dashboard del Administrador
-   Las gráficas usan Recharts — una librería de React para charts.
-*/
-
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar'
-import {
-  PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
-  XAxis, YAxis, CartesianGrid,
-} from 'recharts'
-import { mockData } from '../../services/api'
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { adminAPI } from '../../services/api' // <-- Usamos la API real
 
-// COLORES — definidos en un solo lugar
-const COLORS = {
-  blue:   '#3b82f6',
-  green:  '#10b981',
-  red:    '#ef4444',
-  amber:  '#f59e0b',
-  purple: '#8b5cf6',
-  teal:   '#14b8a6',
-  muted:  '#374151',
-  grid:   '#1f2937',
-  text:   '#9ca3af',
-}
+const COLORS = { blue: '#3b82f6', green: '#10b981', red: '#ef4444', amber: '#f59e0b' }
 
-// COMPONENTES REUTILIZABLES
-
-// Tarjeta de métrica KPI
-function KpiCard({ label, value, sublabel, color = COLORS.blue, icon }) {
-  return (
-    <div className="card flex items-center gap-4">
-      <div
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-        style={{ backgroundColor: `${color}20`, border: `1px solid ${color}30` }}
-      >
-        <span style={{ color }} className="text-lg">{icon}</span>
-      </div>
-      <div>
-        <p className="text-2xl font-bold text-white">{value}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{label}</p>
-        {sublabel && <p className="text-xs text-gray-600 mt-0.5">{sublabel}</p>}
-      </div>
-    </div>
-  )
-}
-
-// Tooltip personalizado para gráficas
 const CustomTooltip = ({ active, payload, label, prefix = '', suffix = '' }) => {
   if (!active || !payload?.length) return null
   return (
@@ -59,47 +20,27 @@ const CustomTooltip = ({ active, payload, label, prefix = '', suffix = '' }) => 
   )
 }
 
-// Datos para las gráficas
-const dash = mockData.admin.dashboard
-const mensual = mockData.admin.reporteMensual
+function Dashboard5({ dash, alumnos }) {
+  const dataAlumnos = [
+    { name: 'Activos',   value: dash.alumnosActivos,   color: COLORS.green },
+    { name: 'Inactivos', value: dash.alumnosInactivos, color: COLORS.red   },
+  ]
 
-const dataAlumnos = [
-  { name: 'Activos',   value: dash.alumnosActivos,   color: COLORS.green },
-  { name: 'Inactivos', value: dash.alumnosInactivos, color: COLORS.red   },
-]
-
-const dataPagos = [
-  { name: 'Realizados', value: dash.pagosRealizados,  color: COLORS.blue  },
-  { name: 'Pendientes', value: dash.pagosPendientes,  color: COLORS.amber },
-]
-
-const dataRadar = [
-  { metric: 'Retención',  value: 76 },
-  { metric: 'Pagos',      value: 84 },
-  { metric: 'Actividad',  value: 68 },
-  { metric: 'Satisfacc.', value: 90 },
-  { metric: 'Avance',     value: 72 },
-]
-
-
-/**  Ejecutivo — Ingreso destacado + tabla de alumnos */
-function Dashboard5() {
-  const alumnos = mockData.admin.alumnos
+  const dataPagos = [
+    { name: 'Realizados ($)', value: dash.pagosRealizados,  color: COLORS.blue  },
+    { name: 'Pendientes ($)', value: dash.pagosPendientes,  color: COLORS.amber },
+  ]
 
   return (
     <div className="space-y-6">
-
-      {/* Hero: ingreso anual */}
       <div className="card overflow-hidden relative">
         <div className="pointer-events-none absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-blue-600/5 to-transparent" />
         <div className="flex flex-col sm:flex-row sm:items-center gap-6">
           <div>
-            <p className="text-xs text-gray-500 mb-1">Ingreso proyectado anual</p>
+            <p className="text-xs text-gray-500 mb-1">Ingreso proyectado (Base activa)</p>
             <p className="text-4xl font-bold text-white">
-              ${(dash.ingresoAnual / 1000).toFixed(0)}k
-              <span className="text-base font-normal text-gray-400 ml-2">USD</span>
+              ${(dash.ingresoAnual / 1000).toFixed(0)}k <span className="text-base text-gray-400 ml-2">MXN</span>
             </p>
-            <p className="text-sm text-gray-500 mt-1">Basado en alumnos activos × $1,500/mes</p>
           </div>
           <div className="flex gap-6 sm:ml-auto">
             <div className="text-center">
@@ -110,22 +51,15 @@ function Dashboard5() {
               <p className="text-2xl font-bold" style={{ color: COLORS.red }}>{dash.alumnosInactivos}</p>
               <p className="text-xs text-gray-500">Inactivos</p>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold" style={{ color: COLORS.amber }}>{dash.pagosPendientes}</p>
-              <p className="text-xs text-gray-500">Pendientes</p>
-            </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Tabla de alumnos recientes */}
         <div className="card lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-white">Alumnos recientes</h3>
-            <Link to="/admin/alumnos" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-              Ver todos →
-            </Link>
+            <h3 className="text-sm font-medium text-white">Directorio (Últimos registrados)</h3>
+            <Link to="/admin/alumnos" className="text-xs text-blue-400 hover:text-blue-300">Ver todos →</Link>
           </div>
           <div className="space-y-2">
             {alumnos.map(alumno => (
@@ -137,19 +71,18 @@ function Dashboard5() {
                   <p className="text-sm text-white truncate">{alumno.nombre}</p>
                   <p className="text-xs text-gray-500 truncate">{alumno.correo}</p>
                 </div>
-                <span className={alumno.status === 'activo' ? 'badge-active' : 'badge-inactive'}>
-                  {alumno.status === 'activo' ? 'Activo' : 'Inactivo'}
+                <span className={alumno.status === 'active' ? 'badge-active' : 'badge-inactive'}>
+                  {alumno.status === 'active' ? 'Activo' : 'Inactivo'}
                 </span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Dos pasteles apilados */}
         <div className="space-y-4">
           {[
-            { title: 'Alumnos', data: dataAlumnos },
-            { title: 'Pagos del mes', data: dataPagos },
+            { title: 'Distribución de Alumnos', data: dataAlumnos },
+            { title: 'Estado de Pagos (MXN)', data: dataPagos },
           ].map((chart, i) => (
             <div key={i} className="card">
               <h3 className="text-sm font-medium text-white mb-2">{chart.title}</h3>
@@ -171,22 +104,57 @@ function Dashboard5() {
 }
 
 export default function AdminDashboard() {
-  
+  const [data, setData] = useState({ dash: null, alumnos: [] })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Pedimos las 3 cosas al mismo tiempo a la API
+    Promise.all([
+      adminAPI.getReporteActivos(),
+      adminAPI.getReportePagos(),
+      adminAPI.getAlumnos()
+    ])
+    .then(([activosRes, pagosRes, alumnosRes]) => {
+      setData({
+        dash: {
+          alumnosActivos: activosRes.numero_de_alumnos_activos,
+          alumnosInactivos: activosRes.numero_de_alumnos_inactivos,
+          pagosRealizados: pagosRes.sumatoria_pagos_realizados,
+          pagosPendientes: pagosRes.sumatoria_pagos_pendientes,
+          ingresoAnual: activosRes.numero_de_alumnos_activos * 1200 * 12 // Cálculo dinámico
+        },
+        // Solo mostramos los últimos 5 para la vista principal
+        alumnos: alumnosRes.alumnos.slice(0, 5).map(a => ({
+          id: a.id, nombre: a.name, correo: a.email, status: a.enrollment_status
+        }))
+      })
+    })
+    .catch(err => console.error(err))
+    .finally(() => setLoading(false))
+  }, [])
+
   return (
     <div className="min-h-screen bg-[var(--c-black)]">
       <Navbar />
-
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        {/* Encabezado. */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold text-white">Dashboard Administrativo</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Cidium Security University — Reportería</p>
+            <p className="text-sm text-gray-500 mt-0.5">EduCore — En vivo desde Azure</p>
           </div>
         </div>
-
-        <Dashboard5 />
-
+        
+        {/* PARACAÍDAS DE SEGURIDAD */}
+        {loading ? (
+          <p className="text-white text-center py-10">Conectando con la base de datos...</p>
+        ) : data.dash ? (
+          <Dashboard5 dash={data.dash} alumnos={data.alumnos} />
+        ) : (
+          <div className="text-center py-10 bg-[var(--c-gray)] rounded-xl border border-red-900/50">
+            <p className="text-red-400 font-medium mb-2">Error al procesar los datos del servidor.</p>
+            <p className="text-sm text-gray-500">Abre la consola (F12) para ver qué endpoint está fallando.</p>
+          </div>
+        )}
       </main>
     </div>
   )

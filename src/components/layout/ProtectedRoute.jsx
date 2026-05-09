@@ -1,15 +1,4 @@
-/* ProtectedRoute.jsx — Guarda de rutas privadas
-   
-   ANALOGÍA: Es como el guardia de seguridad de un edificio.
-   Antes de dejarte pasar a una página, verifica:
-   1. ¿Estás autenticado? Si no, te manda al login
-   2. ¿Tienes el rol correcto? Si no, te manda a tu área
-   
-   Uso en App.jsx:
-   <ProtectedRoute rol="admin">
-     <AdminDashboard />
-   </ProtectedRoute>
-*/
+/* ProtectedRoute.jsx — Guarda de rutas privadas */
 
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
@@ -17,16 +6,29 @@ import { useAuth } from '../../context/AuthContext'
 export default function ProtectedRoute({ children, rol }) {
   const { usuario } = useAuth()
 
-  // No autenticado → al login
+  // 1. No autenticado → al login
   if (!usuario) {
     return <Navigate to="/login" replace />
   }
 
-  // Rol incorrecto → a su dashboard correspondiente
-  if (rol && usuario.rol !== rol) {
-    return <Navigate to={usuario.rol === 'admin' ? '/admin' : '/alumno'} replace />
+  // 2. Normalizamos los roles (Base de Datos Azure vs Frontend React)
+  const rolDelUsuario = usuario.rol; 
+  
+  const esRutaAdmin = rol === 'admin';
+  const esRutaAlumno = rol === 'alumno';
+
+  const esUsuarioAdmin = rolDelUsuario === 'superadmin' || rolDelUsuario === 'admin';
+  const esUsuarioAlumno = rolDelUsuario === 'student' || rolDelUsuario === 'alumno';
+
+  // 3. Verificamos permisos
+  if (esRutaAdmin && !esUsuarioAdmin) {
+    return <Navigate to="/alumno" replace /> // Si no es admin, lo mandamos a alumno
   }
 
-  // Todo bien → mostrar la página
+  if (esRutaAlumno && !esUsuarioAlumno) {
+    return <Navigate to="/admin" replace /> // Si no es alumno, lo mandamos a admin
+  }
+
+  // 4. Todo bien → mostrar la página
   return children
 }

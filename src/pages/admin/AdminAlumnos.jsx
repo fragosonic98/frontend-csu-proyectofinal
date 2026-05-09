@@ -1,17 +1,32 @@
-/* AdminAlumnos.jsx — Lista de alumnos para el administrador */
-
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar'
-import { mockData } from '../../services/api'
+import { adminAPI } from '../../services/api' // <-- Usamos la API real
 
 export default function AdminAlumnos() {
-  const [filtro, setFiltro] = useState('todos') // 'todos' | 'activo' | 'inactivo'
+  const [alumnos, setAlumnos] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filtro, setFiltro] = useState('todos')
   const [busqueda, setBusqueda] = useState('')
 
-  const alumnos = mockData.admin.alumnos
+  // 1. Ejecutar la petición al cargar la página
+  useEffect(() => {
+    adminAPI.getAlumnos()
+      .then(data => {
+        // Adaptamos los datos de la DB al formato de la tabla
+        const alumnosFormateados = data.alumnos.map(a => ({
+          id: a.id,
+          nombre: a.name,
+          correo: a.email,
+          status: a.enrollment_status,
+          matricula: a.student_code // Reemplazamos "último pago" por su matrícula real
+        }))
+        setAlumnos(alumnosFormateados)
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false))
+  }, [])
 
-  // Filtrar alumnos según estado y búsqueda
   const alumnosFiltrados = alumnos.filter(a => {
     const coincideFiltro = filtro === 'todos' || a.status === filtro
     const coincideBusqueda = a.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -24,7 +39,6 @@ export default function AdminAlumnos() {
       <Navbar />
 
       <main className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
-        {/* Encabezado */}
         <div className="mb-6 flex items-center gap-3">
           <Link to="/admin" className="text-gray-500 hover:text-white transition-colors text-sm">
             ← Dashboard
@@ -33,13 +47,8 @@ export default function AdminAlumnos() {
           <h1 className="text-xl font-semibold text-white">Alumnos</h1>
         </div>
 
-        {/* Barra de filtros + búsqueda */}
         <div className="card mb-6 flex flex-col sm:flex-row gap-4">
-          {/* Búsqueda */}
           <div className="relative flex-1">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
             <input
               type="text"
               placeholder="Buscar por nombre o correo..."
@@ -49,12 +58,11 @@ export default function AdminAlumnos() {
             />
           </div>
 
-          {/* Filtros de estado */}
           <div className="flex gap-1 rounded-lg border border-[var(--c-border)] p-1">
             {[
               { val: 'todos',    label: 'Todos' },
-              { val: 'activo',   label: 'Activos' },
-              { val: 'inactivo', label: 'Inactivos' },
+              { val: 'active',   label: 'Activos' },    // Ajustado al valor de la DB
+              { val: 'inactive', label: 'Inactivos' },
             ].map(f => (
               <button
                 key={f.val}
@@ -69,13 +77,12 @@ export default function AdminAlumnos() {
           </div>
         </div>
 
-        {/* Tabla de alumnos */}
         <div className="card overflow-hidden p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="border-b border-[var(--c-border)]">
                 <tr>
-                  {['Alumno', 'Estado', 'Último pago', 'Acciones'].map(h => (
+                  {['Alumno', 'Estado', 'Matrícula', 'Acciones'].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {h}
                     </th>
@@ -83,11 +90,13 @@ export default function AdminAlumnos() {
                 </tr>
               </thead>
               <tbody>
-                {alumnosFiltrados.length === 0 ? (
+                {loading ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-12 text-sm text-gray-500">
-                      No se encontraron alumnos con esos criterios
-                    </td>
+                    <td colSpan={4} className="text-center py-12 text-sm text-gray-500">Cargando base de datos...</td>
+                  </tr>
+                ) : alumnosFiltrados.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-12 text-sm text-gray-500">No se encontraron alumnos</td>
                   </tr>
                 ) : alumnosFiltrados.map(alumno => (
                   <tr key={alumno.id} className="border-b border-[var(--c-border)] hover:bg-[var(--c-gray)]/50 transition-colors">
@@ -103,12 +112,12 @@ export default function AdminAlumnos() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={alumno.status === 'activo' ? 'badge-active' : 'badge-inactive'}>
-                        {alumno.status === 'activo' ? 'Activo' : 'Inactivo'}
+                      <span className={alumno.status === 'active' ? 'badge-active' : 'badge-inactive'}>
+                        {alumno.status === 'active' ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-400">
-                      {new Date(alumno.ultimoPago).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {alumno.matricula}
                     </td>
                     <td className="px-4 py-3">
                       <button className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
@@ -120,8 +129,6 @@ export default function AdminAlumnos() {
               </tbody>
             </table>
           </div>
-
-          {/* Footer de la tabla */}
           <div className="border-t border-[var(--c-border)] px-4 py-3">
             <p className="text-xs text-gray-500">
               Mostrando {alumnosFiltrados.length} de {alumnos.length} alumnos

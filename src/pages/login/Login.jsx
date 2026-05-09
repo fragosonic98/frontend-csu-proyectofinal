@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import CidiumLogo from '../../components/ui/CidiumLogo'
-// import { authAPI } from '../../services/api'  // backend real
+import { authAPI } from '../../services/api'  // <-- IMPORTANTE: Ya está descomentado
 
 export default function Login() {
   const { login } = useAuth()
@@ -29,28 +29,28 @@ export default function Login() {
     setError('')
 
     try {
-      /* ---- CON BACKEND REAL ---- 
-      const data = await authAPI.login(form.usuario, form.contraseña)
-      login(data.user)
-      navigate(data.user.rol === 'admin' ? '/admin' : '/alumno', { replace: true })
-      */
+      // 1. LLAMADA AL BACKEND REAL (Hugging Face -> Azure)
+      // Esto usará la función que configuramos en api.js
+      const response = await authAPI.login(form.usuario, form.contraseña)
 
-      // ---- MOCK: datos de prueba sin backend ----
-      await new Promise(r => setTimeout(r, 800)) // simula latencia
+      // 2. Extraemos la información de la sesión que nos mandó FastAPI
+      const userData = response.data.session
 
-      // Credenciales de prueba: admin/admin123 o alumno/alumno123
-      if (form.usuario === 'admin' && form.contraseña === 'admin123') {
-        const user = { id: 1, nombre: 'Carlos Administrador', rol: 'admin', token: 'mock-jwt-admin' }
-        login(user)
+      // 3. Le pasamos el usuario al Contexto de React para que sepa que estamos logueados
+      // (Le agregamos 'rol' por si otros componentes del frontend usan esa palabra en español)
+      login({ ...userData, rol: userData.role })
+
+      // 4. Redireccionamos dependiendo del rol real que viene de la base de datos
+      if (userData.role === 'superadmin') {
         navigate('/admin', { replace: true })
-      } else if (form.usuario === 'alumno' && form.contraseña === 'alumno123') {
-        const user = { id: 2, nombre: 'Ana García López', rol: 'alumno', token: 'mock-jwt-alumno' }
-        login(user)
+      } else if (userData.role === 'student') {
         navigate('/alumno', { replace: true })
       } else {
-        setError('Usuario o contraseña incorrectos')
+        throw new Error("Rol desconocido")
       }
+
     } catch (err) {
+      // Si FastAPI devuelve un error (ej. "Credenciales incorrectas"), se muestra aquí
       setError(err.message || 'Error al conectar con el servidor')
     } finally {
       setLoading(false)
@@ -80,14 +80,14 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Campo usuario */}
             <div>
-              <label className="form-label" htmlFor="usuario">Usuario</label>
+              <label className="form-label" htmlFor="usuario">Usuario o Correo</label>
               <input
                 id="usuario"
                 name="usuario"
                 type="text"
                 autoComplete="username"
                 required
-                placeholder="Ingresa tu usuario"
+                placeholder="ej. superadmin1@demo.com"
                 value={form.usuario}
                 onChange={handleChange}
                 className="input-field"
