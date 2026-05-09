@@ -2,7 +2,7 @@
    Conectado al backend en FastAPI (Hugging Face)
 */
 
-// URL de tu backend en Hugging Face
+// CAMBIAR ESTE A UN VARIABLE DE ENTORNO
 const BASE_URL ='https://bitgames456-proyecto-cidium.hf.space/api'
 
 /* ============================================================
